@@ -30,7 +30,6 @@ jobs:
       PGUSER: warehouse
       PGPASSWORD: ci-only-password
       PGDATABASE: warehouse
-      TLC_CACHE_DIR: ${{ runner.temp }}/tlc-cache
       DBT_PROJECT_DIR: dbt
       DBT_PROFILES_DIR: dbt
     steps:
