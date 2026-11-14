@@ -1,0 +1,29 @@
+version: 2
+
+sources:
+  - name: tlc
+    description: >
+      NYC Taxi & Limousine Commission trip records, loaded as-is by the
+      `tlc-ingest` CLI. Trip tables are list-partitioned by `source_month`
+      (the month of the file, not of the pickup).
+    schema: raw
+    tables:
+      - name: load_log
+        description: One row per file load attempt, written by `tlc-ingest`.
+        config:
+          loaded_at_field: finished_at
+          freshness:
+            # TLC publishes one month at a time, about two months after it ends.
+            warn_after: { count: 35, period: day }
+            error_after: { count: 70, period: day }
+            filter: status = 'succeeded'
+        columns:
+          - name: load_id
+            data_tests: [unique, not_null]
+
+      - name: yellow_trips
+        description: Yellow taxi trips, one partition per monthly file.
+      - name: green_trips
+        description: Green (street-hail livery) trips, one partition per monthly file.
+      - name: taxi_zones
+        description: TLC taxi zone lookup (265 zones).

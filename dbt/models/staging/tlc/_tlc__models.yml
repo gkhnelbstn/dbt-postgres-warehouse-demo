@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: stg_tlc__yellow_trips
+    description: Yellow taxi trips, renamed and typed. Money as numeric(12,2).
+    columns:
+      - name: source_month
+        data_tests: [not_null]
+      - name: source_row
+        data_tests: [not_null]
+
+  - name: stg_tlc__green_trips
+    description: Green taxi trips, same shape as the yellow staging model.
+    columns:
+      - name: source_month
+        data_tests: [not_null]
+
+  - name: stg_tlc__taxi_zones
+    columns:
+      - name: zone_id
+        data_tests: [unique, not_null]
+
+  - name: stg_tlc__load_log
+    description: The ingestion load log, for monitoring loads from the warehouse.
+    columns:
+      - name: load_id
+        data_tests: [unique, not_null]
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments: { values: [running, succeeded, failed] }

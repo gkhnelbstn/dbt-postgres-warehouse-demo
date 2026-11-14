@@ -1,0 +1,15 @@
+version: 2
+
+seeds:
+  - name: tlc_vendors
+    description: TPEP/LPEP technology providers, from the TLC trip record data dictionaries.
+    config:
+      column_types: { vendor_id: integer, vendor_name: text }
+  - name: tlc_payment_types
+    description: Payment type codes, from the TLC data dictionaries.
+    config:
+      column_types: { payment_type_id: integer, payment_type_name: text }
+  - name: tlc_rate_codes
+    description: Final rate codes in effect at the end of the trip. 99 also stands in for a missing code.
+    config:
+      column_types: { rate_code_id: integer, rate_code_name: text }
