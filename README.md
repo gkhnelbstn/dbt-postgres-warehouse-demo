@@ -122,6 +122,12 @@ the container from `compose.yaml`), over a home internet connection, on 2026-11-
 
 Times include downloads, so they depend on the connection as well as the machine.
 
+**Memory.** The container is capped at 4 GB (`PG_MEM_LIMIT` in `.env`). Without a cap, the Linux
+page cache from these loads is charged to the container and kept: after the run above, Docker
+Desktop showed the container at 19.95 GiB while PostgreSQL itself used about 1 GB. Under the
+4 GB cap, a full rebuild of `fct_trips` took 13.3 minutes (796 s, against 786 s uncapped) and
+its tests passed, with memory peaking at the cap and no out-of-memory kill.
+
 ## License
 
 Code: MIT (see `LICENSE`). Data: NYC TLC trip records, published by the City of New York.
