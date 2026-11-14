@@ -4,8 +4,9 @@ A data warehouse on PostgreSQL built with dbt, on real public data: NYC Taxi & L
 Commission (TLC) yellow and green taxi trip records. A small Python ingestion system loads the
 monthly files into PostgreSQL incrementally; dbt models them into a star schema with tests.
 
-**Status: work in progress.** Ingestion, 22 dbt models with tests, and CI exist. Publishing the
-dbt docs site is set up but not live yet. Progress is tracked in the epic issue and on the
+**Status: work in progress.** Ingestion, 22 dbt models with tests, CI, and the
+[dbt docs site](https://gkhnelbstn.github.io/dbt-postgres-warehouse-demo/) exist. Progress is
+tracked in the epic issue and on the
 [Portfolio build-out](https://github.com/users/gkhnelbstn/projects/6) board.
 
 ![dbt lineage graph](docs/lineage.png)
@@ -114,10 +115,11 @@ uv run dbt source freshness
 Re-run the same `tlc-ingest` command any time; it only loads what is new or changed.
 Inspect loads with `select * from raw.load_log order by load_id desc;`.
 
-Docs: `uv run dbt docs generate && uv run dbt docs serve`. CI also builds a static docs site
-from the sample run on every push; deploying it to GitHub Pages from `main` is wired up in
-`.github/workflows/ci.yml` and switched on by the repository variable `DEPLOY_DOCS=true`.
-That site describes the sample data (50,000 rows per yellow file), not the 24-month load.
+Docs: `uv run dbt docs generate && uv run dbt docs serve`. CI builds a static docs site from
+the sample run and, on every push to `main`, deploys it to
+[GitHub Pages](https://gkhnelbstn.github.io/dbt-postgres-warehouse-demo/) (switched on by the
+repository variable `DEPLOY_DOCS=true`). The published catalog describes the CI sample
+(50,000 rows per yellow file), not the 24-month load.
 
 Tests: `uv run pytest` (the database tests use a throwaway `tlc_ingest_test` database and are
 skipped when `PGHOST` is not set). Lint: `uv run ruff check && uv run ruff format --check`.
