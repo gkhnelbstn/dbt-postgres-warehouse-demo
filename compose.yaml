@@ -25,6 +25,11 @@ services:
       - -c
       - checkpoint_timeout=15min
     shm_size: 1gb
+    # Without a limit, the Linux page cache from bulk loads (tens of GB read and
+    # written) is charged to this container and kept, so Docker Desktop shows it
+    # using most of the VM's memory. A limit makes the kernel recycle that cache
+    # within the cap. PostgreSQL itself needs shared_buffers plus work memory.
+    mem_limit: ${PG_MEM_LIMIT:-4g}
     ports:
       - "127.0.0.1:${PGPORT:-5432}:5432"
     volumes:
