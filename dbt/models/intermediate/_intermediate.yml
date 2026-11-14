@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: int_trips__unioned
+    description: Yellow and green trips in one shape, with `trip_id` and the `is_valid` flag.
+    columns:
+      - name: trip_id
+        data_tests: [not_null]
+
+  - name: int_trips__analysis_ready
+    description: >
+      Valid trips whose pickup is in the month of their file, with pickup and dropoff
+      boroughs. The single input of every trip aggregate.
+    columns:
+      - name: trip_id
+        data_tests: [not_null]

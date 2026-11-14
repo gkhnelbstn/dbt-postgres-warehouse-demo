@@ -14,8 +14,8 @@ models:
       - name: service_type
         data_tests:
           - not_null
-          - accepted_values:
-              arguments: { values: [yellow, green] }
+          - relationships:
+              arguments: { to: ref('dim_service_type'), field: service_type }
       - name: source_month
         description: Month of the TLC file the trip came from.
         data_tests: [not_null]
@@ -75,3 +75,40 @@ models:
     columns:
       - name: rate_code_id
         data_tests: [unique, not_null]
+
+  - name: dim_service_type
+    description: The two TLC services in this warehouse.
+    columns:
+      - name: service_type
+        data_tests: [unique, not_null]
+
+  - name: dim_airport
+    description: JFK, LaGuardia and Newark, with the TLC zone each one is.
+    columns:
+      - name: airport_code
+        data_tests: [unique, not_null]
+      - name: zone_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments: { to: ref('dim_zone'), field: zone_id }
+
+  - name: mart_file_quality
+    description: >
+      One row per loaded TLC file: file and raw row counts from the load log, rows
+      in fct_trips, and how many rows break each validity rule. `is_reconciled`
+      must be true for every file.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: { combination_of_columns: [service_type, source_month] }
+    columns:
+      - name: service_type
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_service_type'), field: service_type }
+      - name: is_reconciled
+        description: Every row the loader put into raw reached fct_trips.
+        data_tests:
+          - accepted_values:
+              arguments: { values: [true] }
