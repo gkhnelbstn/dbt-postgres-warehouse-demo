@@ -1,0 +1,43 @@
+[project]
+name = "tlc-ingest"
+version = "0.1.0"
+description = "Incremental, idempotent loader for NYC TLC trip records into PostgreSQL, plus the dbt project that models them."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "httpx>=0.27",
+    "psycopg[binary]>=3.2",
+    "pyarrow>=17",
+]
+
+[project.scripts]
+tlc-ingest = "tlc_ingest.cli:main"
+
+[dependency-groups]
+dev = [
+    "dbt-core>=1.9,<2",
+    "dbt-postgres>=1.9,<2",
+    "pre-commit>=3.7",
+    "pytest>=8",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tlc_ingest"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["db: needs a reachable PostgreSQL (PG* environment variables)"]

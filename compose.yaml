@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${PGUSER:-warehouse}
+      POSTGRES_PASSWORD: ${PGPASSWORD:?set PGPASSWORD in .env (copy .env.example)}
+      POSTGRES_DB: ${PGDATABASE:-warehouse}
+    # Bulk-load friendly settings for a laptop. wal_level=minimal lets COPY into
+    # a table truncated in the same transaction skip WAL; it also means no
+    # replication and no point-in-time recovery, which this demo does not need.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=1GB
+      - -c
+      - work_mem=64MB
+      - -c
+      - maintenance_work_mem=512MB
+      - -c
+      - wal_level=minimal
+      - -c
+      - max_wal_senders=0
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - checkpoint_timeout=15min
+    shm_size: 1gb
+    ports:
+      - "127.0.0.1:${PGPORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:

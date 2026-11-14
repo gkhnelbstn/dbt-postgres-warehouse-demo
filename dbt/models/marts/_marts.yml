@@ -1,0 +1,77 @@
+version: 2
+
+models:
+  - name: fct_trips
+    description: >
+      One row per yellow or green taxi trip. Incremental: each run processes only
+      the monthly files loaded since the previous build and replaces those months.
+      `is_valid` flags trips with impossible times, distances or amounts; they are
+      kept so totals reconcile with the source.
+    columns:
+      - name: trip_id
+        description: Service, file month and row within the file, packed into one bigint.
+        data_tests: [unique, not_null]
+      - name: service_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: { values: [yellow, green] }
+      - name: source_month
+        description: Month of the TLC file the trip came from.
+        data_tests: [not_null]
+      - name: pickup_date
+        description: Pickup date; null when the device clock put it outside 2009-2030.
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_date'), field: date_day }
+      - name: pickup_zone_id
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_zone'), field: zone_id }
+      - name: dropoff_zone_id
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_zone'), field: zone_id }
+      - name: vendor_id
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_vendor'), field: vendor_id }
+      - name: payment_type_id
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_payment_type'), field: payment_type_id }
+      - name: rate_code_id
+        description: Rate code; missing codes are mapped to 99 (unknown).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: { to: ref('dim_rate_code'), field: rate_code_id }
+      - name: is_valid
+        data_tests: [not_null]
+
+  - name: dim_zone
+    description: TLC taxi zones. 264 and 265 are TLC's "unknown" / "outside NYC" zones.
+    columns:
+      - name: zone_id
+        data_tests: [unique, not_null]
+
+  - name: dim_date
+    description: Calendar, one row per day, 2009-2030.
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
+
+  - name: dim_vendor
+    columns:
+      - name: vendor_id
+        data_tests: [unique, not_null]
+
+  - name: dim_payment_type
+    columns:
+      - name: payment_type_id
+        data_tests: [unique, not_null]
+
+  - name: dim_rate_code
+    columns:
+      - name: rate_code_id
+        data_tests: [unique, not_null]
