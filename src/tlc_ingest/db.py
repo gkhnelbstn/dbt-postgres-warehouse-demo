@@ -120,8 +120,8 @@ def fail_log(conn: psycopg.Connection, load_id: int, error: str) -> None:
     conn.rollback()
     with conn.transaction():
         conn.execute(
-            "update raw.load_log set status = 'failed', finished_at = now(), error = %s "
-            "where load_id = %s",
+            "update raw.load_log set status = 'failed', finished_at = clock_timestamp(), "
+            "error = %s where load_id = %s",
             (error[:4000], load_id),
         )
 
@@ -192,7 +192,7 @@ def load_file(
             raise RowCountMismatch(f"{path.name}: file has {expected} rows, COPY wrote {loaded}")
 
         conn.execute(
-            "update raw.load_log set status = 'succeeded', finished_at = now(), "
+            "update raw.load_log set status = 'succeeded', finished_at = clock_timestamp(), "
             "source_rows = %s, loaded_rows = %s, loaded_at = %s where load_id = %s",
             (source_rows, loaded, loaded_at, load_id),
         )
