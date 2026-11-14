@@ -1,0 +1,143 @@
+version: 2
+
+# All trip aggregates count only `int_trips__analysis_ready` trips (valid, pickup in
+# the file month) and are incremental per file month: `service_type` + `source_month`
+# is the replacement unit, `loaded_at` the watermark (macro `new_file_months`).
+
+models:
+  - name: agg_trips_daily
+    description: Daily KPIs per service type.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: { combination_of_columns: [pickup_date, service_type] }
+    columns:
+      - name: pickup_date
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: { to: ref('dim_date'), field: date_day }
+      - name: service_type
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: { to: ref('dim_service_type'), field: service_type }
+      - name: trips
+        data_tests: [not_null]
+
+  - name: agg_trips_daily_pickup_zone
+    description: Daily trips and revenue per pickup zone and service type.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: { combination_of_columns: [pickup_date, service_type, pickup_zone_id] }
+    columns:
+      - name: pickup_date
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: { to: ref('dim_date'), field: date_day }
+      - name: service_type
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_service_type'), field: service_type }
+      - name: pickup_zone_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: { to: ref('dim_zone'), field: zone_id }
+
+  - name: agg_trips_hourly_borough
+    description: Hourly pickups per pickup borough and service type.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [pickup_date, pickup_hour, service_type, pickup_borough]
+    columns:
+      - name: pickup_date
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: { to: ref('dim_date'), field: date_day }
+      - name: pickup_hour
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: { min_value: 0, max_value: 23 }
+      - name: service_type
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_service_type'), field: service_type }
+
+  - name: agg_lanes_monthly
+    description: >
+      Monthly origin-destination lanes (pickup zone to dropoff zone) with volume,
+      distance, duration and fare per mile.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [month_start, service_type, pickup_zone_id, dropoff_zone_id]
+    columns:
+      - name: service_type
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_service_type'), field: service_type }
+      - name: pickup_zone_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: { to: ref('dim_zone'), field: zone_id }
+      - name: dropoff_zone_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: { to: ref('dim_zone'), field: zone_id }
+
+  - name: agg_airport_trips_daily
+    description: Daily trips to and from JFK, LaGuardia and Newark, per direction.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [pickup_date, service_type, airport_code, direction]
+    columns:
+      - name: pickup_date
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_date'), field: date_day }
+      - name: airport_code
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: { to: ref('dim_airport'), field: airport_code }
+      - name: direction
+        data_tests:
+          - accepted_values:
+              arguments: { values: [from_airport, to_airport] }
+      - name: service_type
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_service_type'), field: service_type }
+
+  - name: agg_payment_mix_monthly
+    description: Monthly trips, revenue and tip rate per payment type.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: { combination_of_columns: [month_start, service_type, payment_type_id] }
+    columns:
+      - name: payment_type_id
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_payment_type'), field: payment_type_id }
+      - name: service_type
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_service_type'), field: service_type }
+
+  - name: agg_trips_monthly
+    description: Monthly KPIs per service type, rolled up from agg_trips_daily.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments: { combination_of_columns: [month_start, service_type] }
+    columns:
+      - name: service_type
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_service_type'), field: service_type }

@@ -59,11 +59,40 @@ jobs:
           uv run tlc-ingest --dataset yellow --dataset green --from 2026-08 --to 2026-09 --max-rows 50000 2>&1 | tee second-run.log
           grep -q "loaded=0, skipped=5" second-run.log
 
+      - name: dbt deps
+        run: uv run dbt deps
+
       - name: dbt build
         run: uv run dbt build
 
       - name: dbt build again (incremental path, nothing new)
         run: uv run dbt build
 
+      # --static writes one self-contained static_index.html (manifest and catalog inlined).
       - name: dbt docs generate
-        run: uv run dbt docs generate
+        run: |
+          uv run dbt docs generate --static
+          mkdir -p site
+          cp dbt/target/static_index.html site/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          path: site
+
+  # Publishes the docs built above. Runs only on main, and only once GitHub Pages
+  # is enabled for the repo (source: GitHub Actions) and the repository variable
+  # DEPLOY_DOCS is set to "true".
+  deploy-docs:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_DOCS == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
