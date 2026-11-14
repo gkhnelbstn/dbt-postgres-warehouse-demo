@@ -134,10 +134,10 @@ the container from `compose.yaml`), over a home internet connection, on 2026-11-
 | Downloaded Parquet | 1.63 GB |
 | `raw` tables in PostgreSQL | 20 GB |
 | `tlc-ingest` wall time | 35.0 minutes for 47 files (download and load; one green month was already loaded) |
-| `dbt build` over all of it | 19.7 minutes, 47 of 47 nodes passed; building `fct_trips` took 13.1 of those minutes |
+| `dbt build --full-refresh`, all 22 models | 41.4 minutes, 105 of 105 nodes passed, container memory peak 3.68 GiB (4 GB cap) |
+| `dbt build` with nothing new | 6.3 minutes, 105 of 105 passed; every incremental model inserted 0 rows in a few seconds, the rest is tests over the full fact table |
 | `fct_trips` | 94,588,040 rows, 22 GB with indexes; 2,319,504 rows (2.5%) flagged `is_valid = false` |
-| Database total | 42 GB |
-| Incremental `fct_trips` run with nothing new | 0.8 seconds, 0 rows inserted |
+| Database total, after all models | 42 GB |
 
 Times include downloads, so they depend on the connection as well as the machine.
 
