@@ -4,6 +4,7 @@ import argparse
 import io
 from datetime import date, datetime
 
+import httpx
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
@@ -11,7 +12,7 @@ import pytest
 from tlc_ingest import db
 from tlc_ingest.cli import _suspicious_gaps, months, parse_month
 from tlc_ingest.datasets import YELLOW
-from tlc_ingest.download import fetch, probe
+from tlc_ingest.download import fetch, make_client, probe
 
 from .conftest import make_yellow_parquet
 
@@ -67,6 +68,25 @@ def test_conform_refuses_overflow():
     batch = batch.set_column(idx, "passenger_count", pa.array([2**40], pa.int64()))
     with pytest.raises(pa.ArrowInvalid):
         db._conform(YELLOW, batch, date(2024, 10, 1), "f", datetime(2024, 12, 1))
+
+
+def test_probe_version_ignores_compression():
+    """CloudFront answers a gzip-accepting client with a weak ETag and no Content-Length."""
+
+    def cdn(request: httpx.Request) -> httpx.Response:
+        if "gzip" in request.headers.get("accept-encoding", ""):
+            return httpx.Response(200, headers={"etag": 'W/"abc"', "content-encoding": "gzip"})
+        return httpx.Response(200, headers={"etag": '"abc"', "content-length": "12331"})
+
+    with make_client() as real:
+        assert real.headers["accept-encoding"] == "identity"
+        sent = dict(real.headers)
+    with httpx.Client(transport=httpx.MockTransport(cdn), headers=sent) as c:
+        plain = probe(c, "https://fake/misc/taxi_zone_lookup.csv")
+    with httpx.Client(transport=httpx.MockTransport(cdn)) as c:
+        gzipped = probe(c, "https://fake/misc/taxi_zone_lookup.csv")
+    assert plain.size == 12331
+    assert plain.version == gzipped.version == '"abc"'
 
 
 def test_probe_unpublished_is_none(fake_tlc):

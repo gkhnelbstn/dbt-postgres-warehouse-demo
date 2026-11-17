@@ -22,8 +22,12 @@ class RemoteFile:
 
 
 def make_client() -> httpx.Client:
+    # Ask for the raw bytes. CloudFront gzips text files (the zone lookup CSV) when the
+    # client accepts it, and then answers with a weak ETag and no Content-Length; whether
+    # a response comes compressed can change between requests, which made an unchanged
+    # file look republished. Uncompressed bytes also keep Range resumes and size checks exact.
     return httpx.Client(
-        headers={"User-Agent": USER_AGENT},
+        headers={"User-Agent": USER_AGENT, "Accept-Encoding": "identity"},
         follow_redirects=True,
         timeout=httpx.Timeout(60.0, connect=20.0),
     )
@@ -38,7 +42,10 @@ def probe(client: httpx.Client, url: str) -> RemoteFile | None:
     size = int(response.headers["content-length"]) if "content-length" in response.headers else None
     raw_modified = response.headers.get("last-modified")
     last_modified = parsedate_to_datetime(raw_modified) if raw_modified else None
-    version = response.headers.get("etag") or f"{raw_modified}-{size}"
+    etag = response.headers.get("etag")
+    if etag and etag.startswith("W/"):
+        etag = etag[2:]  # same file, served compressed; compare on the entity tag itself
+    version = etag or f"{raw_modified}-{size}"
     return RemoteFile(url=url, version=version, size=size, last_modified=last_modified)
 
 
