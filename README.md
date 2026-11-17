@@ -4,10 +4,9 @@ A data warehouse on PostgreSQL built with dbt, on real public data: NYC Taxi & L
 Commission (TLC) yellow and green taxi trip records. A small Python ingestion system loads the
 monthly files into PostgreSQL incrementally; dbt models them into a star schema with tests.
 
-**Status: work in progress.** Ingestion, 22 dbt models with tests, CI, and the
-[dbt docs site](https://gkhnelbstn.github.io/dbt-postgres-warehouse-demo/) exist. Progress is
-tracked in the epic issue and on the
-[Portfolio build-out](https://github.com/users/gkhnelbstn/projects/6) board.
+**Status: v1 complete.** Ingestion, 22 dbt models with tests, CI, and the
+[dbt docs site](https://gkhnelbstn.github.io/dbt-postgres-warehouse-demo/). Orchestration with
+Airflow is planned in a separate repository.
 
 ![dbt lineage graph](docs/lineage.png)
 
